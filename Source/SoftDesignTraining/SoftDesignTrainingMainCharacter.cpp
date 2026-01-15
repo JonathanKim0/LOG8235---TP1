@@ -8,6 +8,11 @@
 
 ASoftDesignTrainingMainCharacter::ASoftDesignTrainingMainCharacter()
 {
+    GetMesh()->SetRelativeRotation(FRotator(0.f, -90.f, 0.f));
+    bUseControllerRotationYaw = false;
+    GetCharacterMovement()->bOrientRotationToMovement = true;
+    GetCharacterMovement()->RotationRate = FRotator(0.f, 540.f, 0.f);
+
     m_IsPoweredUp = false;
 
     // Create a camera boom...
