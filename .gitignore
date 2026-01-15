@@ -39,3 +39,9 @@
 
 # debug information files
 *.dwo
+
+Saved
+Intermediate
+.vs
+SoftDesignTraining.sln
+.vsconfig
