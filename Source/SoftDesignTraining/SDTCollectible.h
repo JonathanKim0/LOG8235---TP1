@@ -19,6 +19,7 @@ public:
     void Collect();
     void OnCooldownDone();
     bool IsOnCooldown();
+    void PlayPickupFeedback();
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AI)
     float m_CollectCooldownDuration = 10.f;
@@ -26,11 +27,16 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AI)
         bool isMoveable = false;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Feedback")
+    class USoundBase* PickupSound;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Feedback")
+    class UParticleSystem* PickupFX; // Or UParticleSystem* if using legacy
+
     virtual void Tick(float deltaTime) override;
     virtual void BeginPlay() override;
 
     FVector initialPosition;
-
 protected:
     FTimerHandle m_CollectCooldownTimer;
 	
