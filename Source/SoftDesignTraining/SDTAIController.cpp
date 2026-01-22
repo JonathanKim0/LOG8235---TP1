@@ -61,9 +61,9 @@ void ASDTAIController::Tick(float deltaTime)
 	FVector pawnPos = pawn->GetActorLocation();
 	float detectionRadius = 100.0f;
 	TArray<FOverlapResult> outResults;
-	SDTUtils::SphereOverlap(GetWorld(), pawnPos, 300.0f, outResults, true);
+	SDTUtils::SphereOverlap(GetWorld(), pawnPos, 800.0f, outResults, true);
 
-	FVector avoidDirection = FVector::ZeroVector;
+	/*FVector avoidDirection = FVector::ZeroVector;
 	bool wallDetected = false;
 	for (FOverlapResult& result : outResults)
 	{
@@ -72,7 +72,7 @@ void ASDTAIController::Tick(float deltaTime)
 		{
 			SDT_LOG("Detected actor: %s", *otherActor->GetName());
 		}
-	}	
+	}	*/
 	// Partie 3
 	// Partie 4
 	// Partie 5
