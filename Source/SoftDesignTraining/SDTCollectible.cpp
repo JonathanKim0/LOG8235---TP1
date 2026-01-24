@@ -3,7 +3,6 @@
 #include "SDTCollectible.h"
 #include "SoftDesignTraining.h"
 #include "Kismet/GameplayStatics.h"
-//#include "NiagaraFunctionLibrary.h"
 
 ASDTCollectible::ASDTCollectible()
 {
@@ -17,6 +16,7 @@ void ASDTCollectible::BeginPlay()
 
 void ASDTCollectible::Collect()
 {
+    if (IsOnCooldown()) return;
     GetWorld()->GetTimerManager().SetTimer(m_CollectCooldownTimer, this, &ASDTCollectible::OnCooldownDone, m_CollectCooldownDuration, false);
     PlayPickupFeedback();
     GetStaticMeshComponent()->SetVisibility(false);
@@ -44,12 +44,12 @@ void ASDTCollectible::PlayPickupFeedback()
     // Trigger Sound
     if (PickupSound)
     {
-        UGameplayStatics::PlaySoundAtLocation(this, PickupSound, GetActorLocation());
+        UGameplayStatics::SpawnSoundAtLocation(GetWorld(), PickupSound, GetActorLocation());
     }
 
     // Trigger FX
-    /*if (PickupFX)
+    if (PickupFX)
     {
-        UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), PickupFX, GetActorLocation());
-    } */ 
+        UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), PickupFX, GetActorLocation(),GetActorRotation(), true);
+    } 
 }
