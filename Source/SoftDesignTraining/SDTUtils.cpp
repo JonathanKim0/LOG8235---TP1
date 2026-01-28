@@ -66,7 +66,7 @@ bool SDTUtils::BoxOverlap(UWorld* uWorld, const FVector& pos, FQuat rotation, fl
     if (drawDebug)
         DrawDebugBox(uWorld, pos + rotation.RotateVector(FVector(length / 2, 0, 0)), FVector(length / 2, 100, 100), rotation, FColor::Blue);
 
-    FCollisionObjectQueryParams objectQueryParams; // All objects
+    FCollisionObjectQueryParams objectQueryParams = FCollisionObjectQueryParams::AllObjects; // All objects
     FCollisionShape collisionShape;
     collisionShape.SetBox(FVector3f(length / 2, 100, 100));
     FCollisionQueryParams queryParams = FCollisionQueryParams::DefaultQueryParam;
