@@ -12,5 +12,6 @@ public:
     static bool Raycast(UWorld* uWorld, FVector sourcePoint, FVector targetPoint);
     static bool IsPlayerPoweredUp(UWorld* uWorld);
     static bool SphereOverlap(UWorld* uWorld, const FVector& pos, float radius, TArray<struct FOverlapResult>& outOverlaps, bool drawDebug);
+    static bool BoxOverlap(UWorld* uWorld, const FVector& pos, FQuat rotation, float length, TArray<struct FOverlapResult>& outOverlaps, bool drawDebug);
     static void DebugDrawPrimitive(UWorld* uWorld, const UPrimitiveComponent& primitive);
 };

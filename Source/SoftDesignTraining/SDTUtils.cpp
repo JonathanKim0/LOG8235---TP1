@@ -37,7 +37,6 @@ bool SDTUtils::SphereOverlap(UWorld* uWorld, const FVector& pos, float radius, T
     if (drawDebug)
         DrawDebugSphere(uWorld, pos, radius, 24, FColor::Green);
 
-
     FCollisionObjectQueryParams objectQueryParams; // All objects
     FCollisionShape collisionShape;
     collisionShape.SetSphere(radius);
@@ -45,6 +44,35 @@ bool SDTUtils::SphereOverlap(UWorld* uWorld, const FVector& pos, float radius, T
     queryParams.bReturnPhysicalMaterial = true;
 
     uWorld->OverlapMultiByObjectType(outOverlaps, pos, FQuat::Identity, objectQueryParams, collisionShape, queryParams);
+
+    //Draw overlap results
+    if (drawDebug)
+    {
+        for (int32 i = 0; i < outOverlaps.Num(); ++i)
+        {
+            if (outOverlaps[i].GetComponent())
+                DebugDrawPrimitive(uWorld, *(outOverlaps[i].GetComponent()));
+        }
+    }
+
+    return outOverlaps.Num() > 0;
+}
+
+bool SDTUtils::BoxOverlap(UWorld* uWorld, const FVector& pos, FQuat rotation, float length, TArray<struct FOverlapResult>& outOverlaps, bool drawDebug)
+{
+    if (uWorld == nullptr)
+        return false;
+
+    if (drawDebug)
+        DrawDebugBox(uWorld, pos + rotation.RotateVector(FVector(length / 2, 0, 0)), FVector(length / 2, 100, 100), rotation, FColor::Blue);
+
+    FCollisionObjectQueryParams objectQueryParams; // All objects
+    FCollisionShape collisionShape;
+    collisionShape.SetBox(FVector3f(length / 2, 100, 100));
+    FCollisionQueryParams queryParams = FCollisionQueryParams::DefaultQueryParam;
+    queryParams.bReturnPhysicalMaterial = true;
+
+    uWorld->OverlapMultiByObjectType(outOverlaps, pos + rotation.RotateVector(FVector(length / 2, 0, 0)), rotation, objectQueryParams, collisionShape, queryParams);
 
     //Draw overlap results
     if (drawDebug)
