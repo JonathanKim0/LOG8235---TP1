@@ -31,7 +31,7 @@ public:
     class USoundBase* PickupSound;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Feedback")
-    class UParticleSystem* PickupFX; // Or UParticleSystem* if using legacy
+    class UParticleSystem* PickupFX;
 
     virtual void Tick(float deltaTime) override;
     virtual void BeginPlay() override;
