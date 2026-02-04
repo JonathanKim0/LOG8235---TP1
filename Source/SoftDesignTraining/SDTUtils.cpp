@@ -16,6 +16,21 @@
     return uWorld->LineTraceSingleByChannel(hitData, sourcePoint, targetPoint, ECC_Pawn, TraceParams);
 }
 
+/*static*/ bool SDTUtils::RaycastDistance(UWorld* uWorld, FVector sourcePoint, FVector targetPoint, const AActor* ignoreActor, float& outDistance)
+{
+    FHitResult hitData;
+
+    FCollisionQueryParams traceParams(FName(TEXT("SDT RaycastDistance")), true);
+    if (ignoreActor) traceParams.AddIgnoredActor(ignoreActor);
+
+    const bool bHit = uWorld->LineTraceSingleByChannel(hitData, sourcePoint, targetPoint, ECC_Pawn, traceParams);
+
+    const float len = (targetPoint - sourcePoint).Size();
+    outDistance = (bHit && hitData.bBlockingHit) ? hitData.Distance : len;
+
+    return bHit && hitData.bBlockingHit;
+}
+
 bool SDTUtils::IsPlayerPoweredUp(UWorld * uWorld)
 {
     ACharacter* playerCharacter = UGameplayStatics::GetPlayerCharacter(uWorld, 0);

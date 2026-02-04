@@ -10,6 +10,7 @@ class SOFTDESIGNTRAINING_API SDTUtils
 {
 public:
     static bool Raycast(UWorld* uWorld, FVector sourcePoint, FVector targetPoint);
+    static bool RaycastDistance(UWorld* uWorld, FVector sourcePoint, FVector targetPoint, const AActor* ignoreActor, float& outDistance);
     static bool IsPlayerPoweredUp(UWorld* uWorld);
     static bool SphereOverlap(UWorld* uWorld, const FVector& pos, float radius, TArray<struct FOverlapResult>& outOverlaps, bool drawDebug, FCollisionObjectQueryParams filter);
     static bool BoxOverlap(UWorld* uWorld, const FVector& pos, FQuat rotation, float length, float width, TArray<struct FOverlapResult>& outOverlaps, bool drawDebug, FCollisionObjectQueryParams filter);
