@@ -152,7 +152,7 @@ void ASDTAIController::Tick(float deltaTime)
 
     float fineYawRate = 0.f;
 
-    if (wallAhead)
+    if (wallAhead || seeDeathFloor)
     {
         if (now >= openLockUntilTime)
         {
