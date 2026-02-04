@@ -1,83 +1,167 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// SDTAIController.cpp
 
 #include "SDTAIController.h"
-#include "SoftDesignTraining.h"
-#include "SDTUtils.h"
-#include "Engine/OverlapResult.h"
 
+#include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "DrawDebugHelpers.h"
+
+#include "SDTUtils.h"
+
+void ASDTAIController::turn90Deg(float deltaTime, float turnRateDegPerSec, float directionSign)
+{
+    ACharacter* character = Cast<ACharacter>(GetPawn());
+    if (!character) return;
+
+    const float curYaw = character->GetActorRotation().Yaw;
+
+    if (!bTurn90Active)
+    {
+        bTurn90Active = true;
+        turn90TargetYaw = FRotator::NormalizeAxis(curYaw + directionSign * 90.f);
+    }
+
+    // get closest angle to target yaw
+    const float deltaYaw = FMath::FindDeltaAngleDegrees(curYaw, turn90TargetYaw);
+    const float stopEpsilonDeg = 2.f;
+
+    // dont turn when close to Yaw to avoid jitters
+    if (FMath::Abs(deltaYaw) <= stopEpsilonDeg)
+    {
+        bTurn90Active = false;
+        return;
+    }
+
+    const float signedRate = (deltaYaw > 0.f) ? turnRateDegPerSec : -turnRateDegPerSec;
+
+    FRotator rot = character->GetActorRotation();
+    rot.Yaw = FRotator::NormalizeAxis(rot.Yaw + signedRate * deltaTime);
+    character->SetActorRotation(rot);
+}
 
 void ASDTAIController::Tick(float deltaTime)
-{	
-	// Partie 1
-	APawn* pawn = GetPawn();
-	ACharacter* character = Cast<ACharacter>(pawn);
+{
+    Super::Tick(deltaTime);
 
-	// use controller desired rotation
-	character->GetCharacterMovement()->bUseControllerDesiredRotation = true;
+    ACharacter* character = Cast<ACharacter>(GetPawn());
+    if (!character) return;
 
-	// test turn
-	float Time = GetWorld()->GetTimeSeconds();
-	FVector direction = (FMath::Fmod(Time, 4.f) < 2.f)
-		? FVector(1, 0, 0)
-		: FVector(-1, 0, 0);
+    UCharacterMovementComponent* move = character->GetCharacterMovement();
+    if (!move) return;
 
-	direction.Normalize();
+    // control yaw
+    move->bUseControllerDesiredRotation = false;
+    move->bOrientRotationToMovement = false;
+    character->bUseControllerRotationYaw = false;
 
-	// Move forward
-	character->AddMovementInput(direction);
+    UWorld* world = GetWorld();
+    if (!world) return;
 
-	// Smooth rotation
-	FRotator currentRot = GetControlRotation();
-	FRotator targetRot = direction.Rotation();
+    const float now = world->GetTimeSeconds();
 
-	FRotator newRot = FMath::RInterpTo(
-		currentRot,
-		targetRot,
-		deltaTime,
-		5.f
-	);
+    const float moveSpeed = 300.f;
+    const float traceLen = 150.f;
+    const float sideTraceLen = traceLen * 0.95f;
+    const float turnRateDegPerSec = 270.f;
+    const float sideDeg = 35.f;
+    const float lockDuration = 1.f;
+    const float sideOpenDist = 300.f;
+    const float turningMoveScale = 0.7f;
 
-	SetControlRotation(newRot);
+    move->MaxWalkSpeed = moveSpeed;
 
-	// Smooth speed change
-	FVector forward = character->GetActorForwardVector();
-	float dot = FVector::DotProduct(forward, direction);
-	dot = FMath::Clamp(dot, -1.f, 1.f);
+    const FVector pos = character->GetActorLocation();
+    const FVector fwd = character->GetActorForwardVector();
+    const FVector right = character->GetActorRightVector();
+    const FVector up = FVector::UpVector;
 
-	float angle = FMath::RadiansToDegrees(FMath::Acos(dot));
+    const FVector fwdLeft = fwd.RotateAngleAxis(-sideDeg, up).GetSafeNormal();
+    const FVector fwdRight = fwd.RotateAngleAxis(+sideDeg, up).GetSafeNormal();
 
-	float targetSpeed = (angle > 45.f) ? 150.f : 300.f;
+    // forward ray
+    const bool wallAhead = SDTUtils::Raycast(world, pos, pos + fwd * traceLen);
+    DrawDebugLine(world, pos, pos + fwd * traceLen, wallAhead ? FColor::Red : FColor::Green, false, 0.f, 0, 2.f);
 
-	float newSpeed = FMath::FInterpTo(
-		character->GetCharacterMovement()->MaxWalkSpeed,
-		targetSpeed,
-		deltaTime,
-		3.f
-	);
+    // angled rays
+    float leftDist = sideTraceLen;
+    const bool leftHit = SDTUtils::RaycastDistance(world, pos, pos + fwdLeft * sideTraceLen, character, leftDist);
+    DrawDebugLine(world, pos, pos + fwdLeft * sideTraceLen, leftHit ? FColor::Red : FColor::Green, false, 0.f, 0, 2.f);
+    float rightDist = sideTraceLen;
+    const bool rightHit = SDTUtils::RaycastDistance(world, pos, pos + fwdRight * sideTraceLen, character, rightDist);
+    DrawDebugLine(world, pos, pos + fwdRight * sideTraceLen, rightHit ? FColor::Red : FColor::Green, false, 0.f, 0, 2.f);
 
-	character->GetCharacterMovement()->MaxWalkSpeed = newSpeed;
+    // side rays
+    float leftSideDist = sideOpenDist;
+    const bool leftSideHit = SDTUtils::RaycastDistance(world, pos, pos - right * sideOpenDist, character, leftSideDist);
+    DrawDebugLine(world, pos, pos - right * sideOpenDist, leftSideHit ? FColor::Red : FColor::Green, false, 0.f, 0, 2.f);
+    float rightSideDist = sideOpenDist;
+    const bool rightSideHit = SDTUtils::RaycastDistance(world, pos, pos + right * sideOpenDist, character, rightSideDist);
+    DrawDebugLine(world, pos, pos + right * sideOpenDist, rightSideHit ? FColor::Red : FColor::Green, false, 0.f, 0, 2.f);
 
-	// Partie 2
-	FVector pawnPos = pawn->GetActorLocation();
-	float detectionRadius = 100.0f;
-	TArray<FOverlapResult> outResults1, outResults2;
-	//SDTUtils::SphereOverlap(GetWorld(), pawnPos, 800.0f, outResults1, true);
-	SDTUtils::BoxOverlap(GetWorld(), pawnPos, pawn->GetActorQuat(), 800.0f, outResults2, true);
+    bool leftLocked = leftHit;
+    bool rightLocked = rightHit;
 
-	/*FVector avoidDirection = FVector::ZeroVector;
-	bool wallDetected = false;
-	for (FOverlapResult& result : outResults)
-	{
-		AActor* otherActor = result.GetActor();
-		if (otherActor && otherActor != pawn)
-		{
-			SDT_LOG("Detected actor: %s", *otherActor->GetName());
-		}
-	}	*/
-	// Partie 3
-	// Partie 4
-	// Partie 5
-	
-	// Partie 6
-	// Partie 7
+    // lock direction temporarily on angled hit
+    if (leftHit && !rightHit)
+    {
+        lockSide = -1;
+        lockUntilTime = now + lockDuration;
+    }
+    else if (rightHit && !leftHit)
+    {
+        lockSide = +1;
+        lockUntilTime = now + lockDuration;
+    }
+
+    if (now < lockUntilTime)
+    {
+        if (lockSide == -1) rightLocked = false;
+        if (lockSide == +1) leftLocked = false;
+    }
+    else
+    {
+        lockSide = 0;
+    }
+
+    float fineYawRate = 0.f;
+
+    if (wallAhead)
+    {
+        if (now >= openLockUntilTime)
+        {
+            lockedLeftOpen = (leftSideDist >= sideOpenDist);
+            lockedRightOpen = (rightSideDist >= sideOpenDist);
+            openLockUntilTime = now + lockDuration;
+
+            // turn 90deg into side with an opening
+            if (lockedLeftOpen && !lockedRightOpen) blockedYawSign = -1.f;
+            else if (lockedRightOpen && !lockedLeftOpen) blockedYawSign = +1.f;
+            else blockedYawSign = (FMath::FRand() < 0.5f) ? +1.f : -1.f;
+
+            bTurn90Active = false;
+        }
+
+        turn90Deg(deltaTime, turnRateDegPerSec, blockedYawSign);
+    }
+    else
+    {
+        // release lock when fwd ray is free
+        openLockUntilTime = 0.f;
+        bTurn90Active = false;
+
+        if (rightLocked && !leftLocked) fineYawRate -= turnRateDegPerSec;
+        if (leftLocked && !rightLocked) fineYawRate += turnRateDegPerSec;
+
+        if (FMath::Abs(fineYawRate) > KINDA_SMALL_NUMBER)
+        {
+            FRotator rot = character->GetActorRotation();
+            rot.Yaw = FRotator::NormalizeAxis(rot.Yaw + fineYawRate * deltaTime);
+            character->SetActorRotation(rot);
+        }
+    }
+
+    const bool isTurning = wallAhead || (FMath::Abs(fineYawRate) > KINDA_SMALL_NUMBER);
+    const float moveScale = isTurning ? turningMoveScale : 1.f; // slowdown when turnings
+
+    character->AddMovementInput(character->GetActorForwardVector(), moveScale);
 }
