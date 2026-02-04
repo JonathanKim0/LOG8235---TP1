@@ -49,6 +49,7 @@ bool SDTUtils::SphereOverlap(
     const FVector& pos,
     float radius,
     TArray<struct FOverlapResult>& outOverlaps,
+    TArray<ECollisionChannel> filter,
     bool drawDebug
 )
 {
@@ -58,7 +59,12 @@ bool SDTUtils::SphereOverlap(
     if (drawDebug)
         DrawDebugSphere(uWorld, pos, radius, 24, FColor::Green);
 
-    FCollisionObjectQueryParams params = FCollisionObjectQueryParams::AllObjects;
+    FCollisionObjectQueryParams params;
+
+    for (ECollisionChannel f : filter) {
+        params.AddObjectTypesToQuery(f);
+    }
+
     FCollisionShape collisionShape;
     collisionShape.SetSphere(radius);
     FCollisionQueryParams queryParams = FCollisionQueryParams::DefaultQueryParam;
@@ -86,6 +92,7 @@ bool SDTUtils::BoxOverlap(
     float length,
     float width,
     TArray<struct FOverlapResult>& outOverlaps,
+    TArray<ECollisionChannel> filter,
     bool drawDebug
 )
 {
@@ -101,7 +108,12 @@ bool SDTUtils::BoxOverlap(
             FColor::Blue
         );
 
-    FCollisionObjectQueryParams params = FCollisionObjectQueryParams::AllObjects;
+    FCollisionObjectQueryParams params;
+
+    for (ECollisionChannel f : filter) {
+        params.AddObjectTypesToQuery(f);
+    }
+
     FCollisionShape collisionShape;
     collisionShape.SetBox(FVector3f(length / 2, width / 2, 100));
     FCollisionQueryParams queryParams = FCollisionQueryParams::DefaultQueryParam;

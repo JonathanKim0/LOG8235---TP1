@@ -1,12 +1,11 @@
 // SDTAIController.cpp
 
 #include "SDTAIController.h"
-
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "DrawDebugHelpers.h"
-
 #include "SDTUtils.h"
+#include "Engine/OverlapResult.h"
 
 void ASDTAIController::turn90Deg(float deltaTime, float turnRateDegPerSec, float directionSign)
 {
@@ -100,6 +99,12 @@ void ASDTAIController::Tick(float deltaTime)
 
     bool leftLocked = leftHit;
     bool rightLocked = rightHit;
+
+    TArray<FOverlapResult> boxResults;
+    TArray<ECollisionChannel> boxFilter;
+    boxFilter.Add(ECC_GameTraceChannel3);   // DeathFloor
+    boxFilter.Add(ECC_GameTraceChannel5);   // Collectible
+    SDTUtils::BoxOverlap(world, pos, character->GetActorQuat(), 800, 200, boxResults, boxFilter, true);
 
     // lock direction temporarily on angled hit
     if (leftHit && !rightHit)
