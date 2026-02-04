@@ -163,5 +163,5 @@ void ASDTAIController::Tick(float deltaTime)
     const bool isTurning = wallAhead || (FMath::Abs(fineYawRate) > KINDA_SMALL_NUMBER);
     const float moveScale = isTurning ? turningMoveScale : 1.f; // slowdown when turnings
 
-    character->AddMovementInput(character->GetActorForwardVector(), moveScale);
+    character->AddMovementInput(fwd, moveScale);
 }
