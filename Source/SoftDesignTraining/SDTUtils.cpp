@@ -49,8 +49,7 @@ bool SDTUtils::SphereOverlap(
     const FVector& pos,
     float radius,
     TArray<struct FOverlapResult>& outOverlaps,
-    bool drawDebug,
-    FCollisionObjectQueryParams filter = FCollisionObjectQueryParams::AllObjects
+    bool drawDebug
 )
 {
     if (uWorld == nullptr)
@@ -59,12 +58,13 @@ bool SDTUtils::SphereOverlap(
     if (drawDebug)
         DrawDebugSphere(uWorld, pos, radius, 24, FColor::Green);
 
+    FCollisionObjectQueryParams params = FCollisionObjectQueryParams::AllObjects;
     FCollisionShape collisionShape;
     collisionShape.SetSphere(radius);
     FCollisionQueryParams queryParams = FCollisionQueryParams::DefaultQueryParam;
     queryParams.bReturnPhysicalMaterial = true;
 
-    uWorld->OverlapMultiByObjectType(outOverlaps, pos, FQuat::Identity, filter, collisionShape, queryParams);
+    uWorld->OverlapMultiByObjectType(outOverlaps, pos, FQuat::Identity, params, collisionShape, queryParams);
 
     //Draw overlap results
     if (drawDebug)
@@ -86,8 +86,7 @@ bool SDTUtils::BoxOverlap(
     float length,
     float width,
     TArray<struct FOverlapResult>& outOverlaps,
-    bool drawDebug,
-    FCollisionObjectQueryParams filter = FCollisionObjectQueryParams::AllObjects
+    bool drawDebug
 )
 {
     if (uWorld == nullptr)
@@ -102,12 +101,13 @@ bool SDTUtils::BoxOverlap(
             FColor::Blue
         );
 
+    FCollisionObjectQueryParams params = FCollisionObjectQueryParams::AllObjects;
     FCollisionShape collisionShape;
     collisionShape.SetBox(FVector3f(length / 2, width / 2, 100));
     FCollisionQueryParams queryParams = FCollisionQueryParams::DefaultQueryParam;
     queryParams.bReturnPhysicalMaterial = true;
 
-    uWorld->OverlapMultiByObjectType(outOverlaps, pos + rotation.RotateVector(FVector(length / 2, 0, 0)), rotation, filter, collisionShape, queryParams);
+    uWorld->OverlapMultiByObjectType(outOverlaps, pos + rotation.RotateVector(FVector(length / 2, 0, 0)), rotation, params, collisionShape, queryParams);
 
     //Draw overlap results
     if (drawDebug)
