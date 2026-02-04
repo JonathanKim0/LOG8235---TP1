@@ -66,6 +66,9 @@ void ASDTAIController::Tick(float deltaTime)
     const float lockDuration = 1.f;
     const float sideOpenDist = 300.f;
     const float turningMoveScale = 0.7f;
+    const ECollisionChannel deathFloor = ECC_GameTraceChannel3;
+    const ECollisionChannel player = ECC_GameTraceChannel4;
+    const ECollisionChannel collectible = ECC_GameTraceChannel5;
 
     move->MaxWalkSpeed = moveSpeed;
 
@@ -100,11 +103,30 @@ void ASDTAIController::Tick(float deltaTime)
     bool leftLocked = leftHit;
     bool rightLocked = rightHit;
 
-    TArray<FOverlapResult> boxResults;
-    TArray<ECollisionChannel> boxFilter;
-    boxFilter.Add(ECC_GameTraceChannel3);   // DeathFloor
-    boxFilter.Add(ECC_GameTraceChannel5);   // Collectible
-    SDTUtils::BoxOverlap(world, pos, character->GetActorQuat(), 800, 200, boxResults, boxFilter, true);
+    // Collision detection
+    TArray<FOverlapResult> collectibleResults;
+    TArray<ECollisionChannel> collectibleFilter;
+    collectibleFilter.Add(collectible);
+    bool seeCollectible = SDTUtils::BoxOverlap(world, pos, character->GetActorQuat(), 800, 200, collectibleResults, collectibleFilter, true);
+
+    TArray<FOverlapResult> deathResults;
+    TArray<ECollisionChannel> deathFilter;
+    deathFilter.Add(deathFloor);
+    bool seeDeathFloor = SDTUtils::BoxOverlap(world, pos, character->GetActorQuat(), 150, 150, deathResults, deathFilter, true);
+
+    TArray<FOverlapResult> playerResults;
+    TArray<ECollisionChannel> playerFilter;
+    playerFilter.Add(player);
+    bool hearPlayer = SDTUtils::SphereOverlap(world, pos, 800, playerResults, playerFilter, true);
+    
+    for (FOverlapResult result : collectibleResults) {
+    }
+
+    for (FOverlapResult result : deathResults) {
+    }
+
+    for (FOverlapResult result : playerResults) {
+    }
 
     // lock direction temporarily on angled hit
     if (leftHit && !rightHit)
