@@ -107,7 +107,7 @@ void ASDTAIController::Tick(float deltaTime)
     TArray<FOverlapResult> collectibleResults;
     TArray<ECollisionChannel> collectibleFilter;
     collectibleFilter.Add(collectible);
-    bool seeCollectible = SDTUtils::BoxOverlap(world, pos, character->GetActorQuat(), 800, 200, collectibleResults, collectibleFilter, true);
+    bool seeCollectible = SDTUtils::BoxOverlap(world, pos, character->GetActorQuat(), 800, 400, collectibleResults, collectibleFilter, true);
 
     TArray<FOverlapResult> deathResults;
     TArray<ECollisionChannel> deathFilter;
@@ -119,7 +119,31 @@ void ASDTAIController::Tick(float deltaTime)
     playerFilter.Add(player);
     bool hearPlayer = SDTUtils::SphereOverlap(world, pos, 800, playerResults, playerFilter, true);
     
+    collectibleResults.Sort([&](FOverlapResult lhs, FOverlapResult rhs) {
+        FVector leftLoc = lhs.GetComponent()->GetComponentLocation();
+        float leftDist = FVector::Dist2D(pos, leftLoc);
+        FVector rightLoc = rhs.GetComponent()->GetComponentLocation();
+        float rightDist = FVector::Dist2D(pos, rightLoc);
+
+        return leftDist < rightDist;
+    });
+
     for (FOverlapResult result : collectibleResults) {
+        UPrimitiveComponent* collec = result.GetComponent();
+        
+        if (!SDTUtils::Raycast(world, pos, collec->GetComponentLocation()) && collec->IsVisible()) {
+            FVector toCollec = (collec->GetComponentLocation() - pos).GetSafeNormal2D();
+            FVector safeFwd = fwd.GetSafeNormal2D();
+            float crossZ = FVector::CrossProduct(safeFwd, toCollec).Z;
+            float angle = FMath::RadiansToDegrees(FMath::Acos(safeFwd.CosineAngle2D(toCollec)));
+
+            float turn = FMath::Min(FMath::Abs(angle), turnRateDegPerSec) * deltaTime;
+
+            FRotator rot = character->GetActorRotation();
+            rot.Yaw = FRotator::NormalizeAxis(rot.Yaw + (crossZ > 0 ? turn : -turn));
+            character->SetActorRotation(rot);
+            break;
+        }
     }
 
     for (FOverlapResult result : deathResults) {
