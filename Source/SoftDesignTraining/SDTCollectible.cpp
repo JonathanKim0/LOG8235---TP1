@@ -41,13 +41,11 @@ void ASDTCollectible::Tick(float deltaTime)
 
 void ASDTCollectible::PlayPickupFeedback()
 {
-    // Trigger Sound
     if (PickupSound)
     {
         UGameplayStatics::SpawnSoundAtLocation(GetWorld(), PickupSound, GetActorLocation());
     }
 
-    // Trigger FX
     if (PickupFX)
     {
         UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), PickupFX, GetActorLocation(),GetActorRotation(), true);
