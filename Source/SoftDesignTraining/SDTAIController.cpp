@@ -118,7 +118,7 @@ void ASDTAIController::Tick(float deltaTime)
     TArray<ECollisionChannel> playerFilter;
     playerFilter.Add(player);
     bool hearPlayer = SDTUtils::SphereOverlap(world, pos, 800, playerResults, playerFilter, true);
-    
+
     collectibleResults.Sort([&](FOverlapResult lhs, FOverlapResult rhs) {
         FVector leftLoc = lhs.GetComponent()->GetComponentLocation();
         float leftDist = FVector::Dist2D(pos, leftLoc);
@@ -126,11 +126,11 @@ void ASDTAIController::Tick(float deltaTime)
         float rightDist = FVector::Dist2D(pos, rightLoc);
 
         return leftDist < rightDist;
-    });
+        });
 
     for (FOverlapResult result : collectibleResults) {
         UPrimitiveComponent* collec = result.GetComponent();
-        
+
         if (!SDTUtils::Raycast(world, pos, collec->GetComponentLocation()) && collec->IsVisible()) {
             FVector toCollec = (collec->GetComponentLocation() - pos).GetSafeNormal2D();
             FVector safeFwd = fwd.GetSafeNormal2D();
@@ -149,8 +149,33 @@ void ASDTAIController::Tick(float deltaTime)
     for (FOverlapResult result : deathResults) {
     }
 
-    for (FOverlapResult result : playerResults) {
+
+    for (FOverlapResult& result : playerResults)
+    {
+        AActor* playerActor = result.GetActor();
+        if (!playerActor) continue;
+
+        FVector toPlayer = playerActor->GetActorLocation() - pos;
+        float dist = toPlayer.Size();
+        FVector dir = toPlayer.GetSafeNormal2D();
+        FVector safeFwd = fwd.GetSafeNormal2D();
+
+        // check if path is free of obstacles (raycast)
+        if (SDTUtils::Raycast(world, pos, playerActor->GetActorLocation()))
+            continue;
+
+        // compute rotation toward player
+        float crossZ = FVector::CrossProduct(safeFwd, dir).Z;
+        float angle = FMath::RadiansToDegrees(FMath::Acos(safeFwd.CosineAngle2D(dir)));
+        float turn = FMath::Min(FMath::Abs(angle), turnRateDegPerSec * deltaTime);
+
+        FRotator rot = character->GetActorRotation();
+        rot.Yaw = FRotator::NormalizeAxis(rot.Yaw + (crossZ > 0 ? turn : -turn));
+        character->SetActorRotation(rot);
+
+        break; // only rotate toward the closest valid player
     }
+
 
     // lock direction temporarily on angled hit
     if (leftHit && !rightHit)
