@@ -112,7 +112,7 @@ void ASDTAIController::Tick(float deltaTime)
     TArray<FOverlapResult> deathResults;
     TArray<ECollisionChannel> deathFilter;
     deathFilter.Add(deathFloor);
-    bool seeDeathFloor = SDTUtils::BoxOverlap(world, pos, character->GetActorQuat(), 150, 150, deathResults, deathFilter, true);
+    bool seeDeathFloor = SDTUtils::BoxOverlap(world, pos, character->GetActorQuat(), 200, 150, deathResults, deathFilter, true);
 
     TArray<FOverlapResult> playerResults;
     TArray<ECollisionChannel> playerFilter;
@@ -137,7 +137,7 @@ void ASDTAIController::Tick(float deltaTime)
             float crossZ = FVector::CrossProduct(safeFwd, toCollec).Z;
             float angle = FMath::RadiansToDegrees(FMath::Acos(safeFwd.CosineAngle2D(toCollec)));
 
-            float turn = FMath::Min(FMath::Abs(angle), turnRateDegPerSec) * deltaTime;
+            float turn = FMath::Min(FMath::Abs(angle), turnRateDegPerSec * deltaTime);
 
             FRotator rot = character->GetActorRotation();
             rot.Yaw = FRotator::NormalizeAxis(rot.Yaw + (crossZ > 0 ? turn : -turn));
