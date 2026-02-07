@@ -157,7 +157,13 @@ void ASDTAIController::Tick(float deltaTime)
 
         FVector toPlayer = playerActor->GetActorLocation() - pos;
         float dist = toPlayer.Size();
-        FVector dir = toPlayer.GetSafeNormal2D();
+        bool fleePlayer = SDTUtils::IsPlayerPoweredUp(world);
+
+        // direction toward player OR away if powered up
+        FVector dir = fleePlayer
+            ? (-toPlayer).GetSafeNormal2D()   // flee
+            : toPlayer.GetSafeNormal2D();     // chase
+
         FVector safeFwd = fwd.GetSafeNormal2D();
 
         // check if path is free of obstacles (raycast)
