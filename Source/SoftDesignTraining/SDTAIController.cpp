@@ -156,7 +156,6 @@ void ASDTAIController::Tick(float deltaTime)
         if (!playerActor) continue;
 
         FVector toPlayer = playerActor->GetActorLocation() - pos;
-        float dist = toPlayer.Size();
         bool fleePlayer = SDTUtils::IsPlayerPoweredUp(world);
 
         // direction toward player OR away if powered up
@@ -166,14 +165,17 @@ void ASDTAIController::Tick(float deltaTime)
 
         FVector safeFwd = fwd.GetSafeNormal2D();
 
-        // check if path is free of obstacles (raycast)
-        if (SDTUtils::Raycast(world, pos, playerActor->GetActorLocation()))
+        // WALL AVOIDANCE IN DESIRED DIRECTION
+        FVector desiredTarget = pos + dir * traceLen;
+        if (SDTUtils::Raycast(world, pos, desiredTarget))
             continue;
 
-        // compute rotation toward player
+        // rotate toward desired direction
         float crossZ = FVector::CrossProduct(safeFwd, dir).Z;
-        float angle = FMath::RadiansToDegrees(FMath::Acos(safeFwd.CosineAngle2D(dir)));
-        float turn = FMath::Min(FMath::Abs(angle), turnRateDegPerSec * deltaTime);
+        float angle = FMath::RadiansToDegrees(
+            FMath::Acos(FMath::Clamp(safeFwd.CosineAngle2D(dir), -1.f, 1.f)));
+
+        float turn = FMath::Min(angle, turnRateDegPerSec * deltaTime);
 
         FRotator rot = character->GetActorRotation();
         rot.Yaw = FRotator::NormalizeAxis(rot.Yaw + (crossZ > 0 ? turn : -turn));
@@ -181,6 +183,7 @@ void ASDTAIController::Tick(float deltaTime)
 
         break; // only rotate toward the closest valid player
     }
+
 
 
     // lock direction temporarily on angled hit
