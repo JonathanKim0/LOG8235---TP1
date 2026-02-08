@@ -119,42 +119,20 @@ void ASDTAIController::Tick(float deltaTime)
     playerFilter.Add(player);
     bool hearPlayer = SDTUtils::SphereOverlap(world, pos, 800, playerResults, playerFilter, true);
 
-    collectibleResults.Sort([&](FOverlapResult lhs, FOverlapResult rhs) {
-        FVector leftLoc = lhs.GetComponent()->GetComponentLocation();
-        float leftDist = FVector::Dist2D(pos, leftLoc);
-        FVector rightLoc = rhs.GetComponent()->GetComponentLocation();
-        float rightDist = FVector::Dist2D(pos, rightLoc);
+    bool isPanicking = false;
+    bool isChasing = false;
 
-        return leftDist < rightDist;
-        });
-
-    for (FOverlapResult result : collectibleResults) {
-        UPrimitiveComponent* collec = result.GetComponent();
-
-        if (!SDTUtils::Raycast(world, pos, collec->GetComponentLocation()) && collec->IsVisible()) {
-            FVector toCollec = (collec->GetComponentLocation() - pos).GetSafeNormal2D();
-            FVector safeFwd = fwd.GetSafeNormal2D();
-            float crossZ = FVector::CrossProduct(safeFwd, toCollec).Z;
-            float angle = FMath::RadiansToDegrees(FMath::Acos(safeFwd.CosineAngle2D(toCollec)));
-
-            float turn = FMath::Min(FMath::Abs(angle), turnRateDegPerSec * deltaTime);
-
-            FRotator rot = character->GetActorRotation();
-            rot.Yaw = FRotator::NormalizeAxis(rot.Yaw + (crossZ > 0 ? turn : -turn));
-            character->SetActorRotation(rot);
-            break;
-        }
+    if (seeDeathFloor)
+    {
+        isPanicking = true;
+        turn90Deg(deltaTime, turnRateDegPerSec, blockedYawSign);
     }
-
-    for (FOverlapResult result : deathResults) {
-    }
-
 
     for (FOverlapResult& result : playerResults)
     {
         AActor* playerActor = result.GetActor();
         if (!playerActor) continue;
-
+        isChasing = true;
         FVector toPlayer = playerActor->GetActorLocation() - pos;
         bool fleePlayer = SDTUtils::IsPlayerPoweredUp(world);
 
@@ -182,6 +160,39 @@ void ASDTAIController::Tick(float deltaTime)
         character->SetActorRotation(rot);
 
         break; // only rotate toward the closest valid player
+    }
+
+    if (!isPanicking && !isChasing) {
+        collectibleResults.Sort([&](FOverlapResult lhs, FOverlapResult rhs) {
+            FVector leftLoc = lhs.GetComponent()->GetComponentLocation();
+            float leftDist = FVector::Dist2D(pos, leftLoc);
+            FVector rightLoc = rhs.GetComponent()->GetComponentLocation();
+            float rightDist = FVector::Dist2D(pos, rightLoc);
+
+            return leftDist < rightDist;
+            });
+
+        for (FOverlapResult result : collectibleResults) {
+            UPrimitiveComponent* collec = result.GetComponent();
+
+            if (!SDTUtils::Raycast(world, pos, collec->GetComponentLocation()) && collec->IsVisible()) {
+                FVector toCollec = (collec->GetComponentLocation() - pos).GetSafeNormal2D();
+                FVector safeFwd = fwd.GetSafeNormal2D();
+                float crossZ = FVector::CrossProduct(safeFwd, toCollec).Z;
+                float angle = FMath::RadiansToDegrees(FMath::Acos(safeFwd.CosineAngle2D(toCollec)));
+
+                float turn = FMath::Min(FMath::Abs(angle), turnRateDegPerSec * deltaTime);
+
+                FRotator rot = character->GetActorRotation();
+                rot.Yaw = FRotator::NormalizeAxis(rot.Yaw + (crossZ > 0 ? turn : -turn));
+                character->SetActorRotation(rot);
+                break;
+            }
+        }
+    }
+
+
+    for (FOverlapResult result : deathResults) {
     }
 
 
@@ -246,7 +257,7 @@ void ASDTAIController::Tick(float deltaTime)
     }
 
     const bool isTurning = wallAhead || (FMath::Abs(fineYawRate) > KINDA_SMALL_NUMBER);
-    const float moveScale = isTurning ? turningMoveScale : 1.f; // slowdown when turnings
-
+    float moveScale = isTurning ? turningMoveScale : 1.f; // slowdown when turnings
+    if (isPanicking) moveScale = 0.f;
     character->AddMovementInput(fwd, moveScale);
 }
