@@ -130,25 +130,34 @@ void ASDTAIController::Tick(float deltaTime)
 
     for (FOverlapResult& result : playerResults)
     {
+        // Do not steer toward / away from player if wall logic is active
+        if (wallAhead || bTurn90Active || seeDeathFloor)
+            break;
+
         AActor* playerActor = result.GetActor();
         if (!playerActor) continue;
+
         isChasing = true;
+
         FVector toPlayer = playerActor->GetActorLocation() - pos;
         bool fleePlayer = SDTUtils::IsPlayerPoweredUp(world);
-
         // direction toward player OR away if powered up
         FVector dir = fleePlayer
-            ? (-toPlayer).GetSafeNormal2D()   // flee
-            : toPlayer.GetSafeNormal2D();     // chase
+            ? (-toPlayer).GetSafeNormal2D() // flee
+            : toPlayer.GetSafeNormal2D(); // chase
 
         FVector safeFwd = fwd.GetSafeNormal2D();
 
-        // WALL AVOIDANCE IN DESIRED DIRECTION
-        FVector desiredTarget = pos + dir * traceLen;
-        if (SDTUtils::Raycast(world, pos, desiredTarget))
-            continue;
+        // WALL CHECK IN DESIRED DIRECTION
+        if (SDTUtils::Raycast(world, pos, pos + dir * traceLen))
+        {
+            // deterministic fallback: choose the more open side
+            if (leftSideDist > rightSideDist)
+                dir = -right;   // left open
+            else
+                dir = right;    // right open
+        }
 
-        // rotate toward desired direction
         float crossZ = FVector::CrossProduct(safeFwd, dir).Z;
         float angle = FMath::RadiansToDegrees(
             FMath::Acos(FMath::Clamp(safeFwd.CosineAngle2D(dir), -1.f, 1.f)));
@@ -159,8 +168,9 @@ void ASDTAIController::Tick(float deltaTime)
         rot.Yaw = FRotator::NormalizeAxis(rot.Yaw + (crossZ > 0 ? turn : -turn));
         character->SetActorRotation(rot);
 
-        break; // only rotate toward the closest valid player
+        break;
     }
+
 
     if (!isPanicking && !isChasing) {
         collectibleResults.Sort([&](FOverlapResult lhs, FOverlapResult rhs) {
