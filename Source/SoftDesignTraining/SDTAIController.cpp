@@ -201,12 +201,6 @@ void ASDTAIController::Tick(float deltaTime)
         }
     }
 
-
-    for (FOverlapResult result : deathResults) {
-    }
-
-
-
     // lock direction temporarily on angled hit
     if (leftHit && !rightHit)
     {
